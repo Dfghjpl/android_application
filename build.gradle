@@ -11,10 +11,23 @@ repositories {
     mavenCentral()
 }
 
+jar {
+	manifest {
+		attributes 'Main-Class': 'com.localmesh.network.WebSocketChatServer'
+	}
+	from {
+		configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+	}
+	exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+
+test {
+	enabled = false
+}
+
 dependencies {
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    implementation 'org.java-websocket:Java-WebSocket:1.5.4'
-    // SLF4J simple logger for quick logging
-    implementation 'org.slf4j:slf4j-simple:2.0.7'
-    testImplementation 'junit:junit:4.13.2'
+	implementation 'org.java-websocket:Java-WebSocket:1.5.3'
+	implementation 'org.nanohttpd:nanohttpd:2.3.1'
+	implementation 'com.google.code.gson:gson:2.10.1'
 }

@@ -8,6 +8,8 @@ import com.localmesh.storage.MessageStorage;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -20,6 +22,7 @@ public class WebSocketChatServer extends WebSocketServer {
 	private final ServerConfig cfg;
 	private final AtomicInteger connections = new AtomicInteger(0);
 	private final MessageStorage storage = new MessageStorage();
+	private static final Logger logger = LoggerFactory.getLogger(WebSocketChatServer.class);
 	
 	public WebSocketChatServer(ServerConfig cfg) {
 		super(new InetSocketAddress(cfg.getPort()));
@@ -27,7 +30,7 @@ public class WebSocketChatServer extends WebSocketServer {
 		try {
 			new HttpWebInterface(8081, clients, storage);
 		} catch (IOException e) {
-			System.err.println("Failed to start HTTP web interface: " + e getMessage());
+			logger.info("Failed to start HTTP web interface: " + e getMessage());
 		}
 	}
 
@@ -43,7 +46,7 @@ public class WebSocketChatServer extends WebSocketServer {
 		u.setStatus(User.Status.ONLINE);
 		u.setLastSeen(System.currentTimeMillis());
 		clients.put(conn, u);
-		System.out.println("New connection: " + conn.getRemoteSocketAddress() + " assignedId=" + u.getId());
+		logger.info("New connection: " + conn.getRemoteSocketAddress() + " assignedId=" + u.getId());
 		
 		// кидаем клиенту id (информация)
 		java.util.Map<String,Object> welcome = new java.util.HashMap<>();
@@ -68,9 +71,9 @@ public class WebSocketChatServer extends WebSocketServer {
 		if (u != null) {
 			u.setStatus(User.Status.OFFLINE);
 			u.setLastSeen(System.currentTimeMillis());
-			System.out.println("Connection closed: " + u.getId() + " reason=" + reason);
+			logger.info("Connection closed: " + u.getId() + " reason=" + reason);
 		} else {
-			System.out.println("Connection closed: unknown reason=" + reason);
+			logger.error("Connection closed: unknown reason=" + reason);
 		}
 		broadcastUserList();
 	}
@@ -138,7 +141,7 @@ public class WebSocketChatServer extends WebSocketServer {
 				sosMsg.setLongitude(u.getLongitude());
 				sosMsg.setText((String) incoming.getOrDefault("text", "SOS"));
 
-				System.err.println("[SOS] user=" + u.getId() + " name=" + u.getName() + " lat=" + sosMsg.getLatitude() + " lon=" + sosMsg.getLongitude() + " time=" + sosMsg.getTimestamp());
+				logger.error("[SOS] user=" + u.getId() + " name=" + u.getName() + " lat=" + sosMsg.getLatitude() + " lon=" + sosMsg.getLongitude() + " time=" + sosMsg.getTimestamp());
 
 				broadcast(JsonUtil.toJson(sosMsg));
 				return;
@@ -187,12 +190,12 @@ public class WebSocketChatServer extends WebSocketServer {
 	}
 	@Override
 	public void onError(WebSocket conn, Exception ex) {
-		System.err.println("Server error: " + ex.getMessage());
+		logger.error("Server error: " + ex.getMessage());
 	}
 
 	@Override
 	public void onStart() {
-		System.out.println("WebSocket server started on port " + cfg.getPort());
+		logger.info("WebSocket server started on port " + cfg.getPort());
 	}
 
 	private void broadcastUserList() {
